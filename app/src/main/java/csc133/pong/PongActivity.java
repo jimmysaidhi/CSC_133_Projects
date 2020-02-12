@@ -13,6 +13,8 @@ public class PongActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         Display display = getWindowManager().getDefaultDisplay();
+
+        // Gets properties of the device and then initializes the pong game
         Point size = new Point();
         display.getSize(size);
 
@@ -23,16 +25,12 @@ public class PongActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-
-        // More code here later in the chapter
         mPongGame.resume();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-
-        // More code here later in the chapter
         mPongGame.pause();
     }
 }

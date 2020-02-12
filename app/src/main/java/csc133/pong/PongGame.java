@@ -1,28 +1,23 @@
 package csc133.pong;
 
+
 import android.content.Context;
-import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.media.AudioAttributes;
-import android.media.AudioManager;
-import android.media.SoundPool;
-import android.os.Build;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
-import java.io.IOException;
 
 class PongGame extends SurfaceView implements Runnable{
 
     // Are we debugging?
     private final boolean DEBUGGING = true;
     private String userName = "Jimmy Le";
+
+
     // These objects are needed to do the drawing
     private SurfaceHolder mOurHolder;
     private Canvas mCanvas;
@@ -48,6 +43,10 @@ class PongGame extends SurfaceView implements Runnable{
     private int mScore = 0;
     private int mLives = 3;
 
+
+    // SoundPool to control Sound
+    private Sound gameSound;
+
     // Here is the Thread and two control variables
     private Thread mGameThread = null;
     // This volatile variable can be accessed
@@ -55,12 +54,6 @@ class PongGame extends SurfaceView implements Runnable{
     private volatile boolean mPlaying;
     private boolean mPaused = true;
 
-    // All these are for playing sounds
-    private SoundPool mSP;
-    private int mBeepID = -1;
-    private int mBoopID = -1;
-    private int mBopID = -1;
-    private int mMissID = -1;
 
     // The PongGame constructor
     // Called when this line:
@@ -72,8 +65,11 @@ class PongGame extends SurfaceView implements Runnable{
         // provided by Android
         super(context);
 
+        // initializes sound based, connecting it to this context and starts the sound
+        this.gameSound = new Sound(context);
+
         // Initialize these two members/fields
-        // With the values passesd in as parameters
+        // With the values passed in as parameters
         mScreenX = x;
         mScreenY = y;
 
@@ -92,50 +88,6 @@ class PongGame extends SurfaceView implements Runnable{
         mBall = new Ball(mScreenX);
         mBat = new Bat(mScreenX, mScreenY);
 
-        // Prepare the SoundPool instance
-        // Depending upon the version of Android
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            AudioAttributes audioAttributes = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build();
-
-            mSP = new SoundPool.Builder()
-                    .setMaxStreams(5)
-                    .setAudioAttributes(audioAttributes)
-                    .build();
-        } else {
-            mSP = new SoundPool(5, AudioManager.STREAM_MUSIC, 0);
-        }
-
-
-
-        // Open each of the sound files in turn
-        // and load them in to Ram ready to play
-        // The try-catch blocks handle when this fails
-        // and is required.
-        try{
-            AssetManager assetManager = context.getAssets();
-            AssetFileDescriptor descriptor;
-
-            descriptor = assetManager.openFd("beep.ogg");
-            mBeepID = mSP.load(descriptor, 0);
-
-            descriptor = assetManager.openFd("boop.ogg");
-            mBoopID = mSP.load(descriptor, 0);
-
-            descriptor = assetManager.openFd("bop.ogg");
-            mBopID = mSP.load(descriptor, 0);
-
-            descriptor = assetManager.openFd("miss.ogg");
-            mMissID = mSP.load(descriptor, 0);
-
-
-        }catch(IOException e){
-            Log.e("error", "failed to load sound files");
-        }
-
         // Everything is ready so start the game
         startNewGame();
     }
@@ -143,14 +95,12 @@ class PongGame extends SurfaceView implements Runnable{
     // The player has just lost
     // or is starting their first game
     private void startNewGame(){
-
         // Put the ball back to the starting position
         mBall.reset(mScreenX, mScreenY);
 
         // Rest the score and the player's chances
         mScore = 0;
         mLives = 3;
-
     }
 
     // When we start the thread with:
@@ -213,7 +163,7 @@ class PongGame extends SurfaceView implements Runnable{
             mBall.batBounce(mBat.getRect());
             mBall.increaseVelocity();
             mScore++;
-            mSP.play(mBeepID, 1, 1, 0, 0, 1);
+            gameSound.collisionSounds("BAT");
         }
 
         // Has the ball hit the edge of the screen
@@ -223,7 +173,7 @@ class PongGame extends SurfaceView implements Runnable{
             mBall.reverseYVelocity();
 
             mLives--;
-            mSP.play(mMissID, 1, 1, 0, 0, 1);
+            gameSound.collisionSounds("BOTTOM");
 
             if(mLives == 0){
                 mPaused = true;
@@ -234,19 +184,21 @@ class PongGame extends SurfaceView implements Runnable{
         // Top
         if(mBall.getRect().top < 0){
             mBall.reverseYVelocity();
-            mSP.play(mBoopID, 1, 1, 0, 0, 1);
+            gameSound.collisionSounds("TOP");
+
         }
 
         // Left
         if(mBall.getRect().left < 0){
             mBall.reverseXVelocity();
-            mSP.play(mBopID, 1, 1, 0, 0, 1);
+            gameSound.collisionSounds("LEFT");
+
         }
 
         // Right
         if(mBall.getRect().right > mScreenX){
             mBall.reverseXVelocity();
-            mSP.play(mBopID, 1, 1, 0, 0, 1);
+            gameSound.collisionSounds("RIGHT");
         }
 
     }
@@ -308,7 +260,7 @@ class PongGame extends SurfaceView implements Runnable{
             // The player has put their finger on the screen
             case MotionEvent.ACTION_DOWN:
 
-                // If the game was paused unpause
+                // If the game was paused un-pause
                 mPaused = false;
 
                 // Where did the touch happen
