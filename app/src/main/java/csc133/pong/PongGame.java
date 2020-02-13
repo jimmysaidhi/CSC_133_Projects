@@ -15,8 +15,6 @@ class PongGame extends SurfaceView implements Runnable{
 
     // Are we debugging?
     private final boolean DEBUGGING = true;
-    private String userName = "Jimmy Le";
-
 
     // These objects are needed to do the drawing
     private SurfaceHolder mOurHolder;
@@ -39,13 +37,10 @@ class PongGame extends SurfaceView implements Runnable{
     private Bat mBat;
     private Ball mBall;
 
-    // The current score and lives remaining
-    private int mScore = 0;
-    private int mLives = 3;
-
 
     // SoundPool to control Sound
     private Sound gameSound;
+    private Profile profile;
 
     // Here is the Thread and two control variables
     private Thread mGameThread = null;
@@ -67,6 +62,7 @@ class PongGame extends SurfaceView implements Runnable{
 
         // initializes sound based, connecting it to this context and starts the sound
         this.gameSound = new Sound(context);
+        this.profile = new Profile("Jimmy Le");
 
         // Initialize these two members/fields
         // With the values passed in as parameters
@@ -98,9 +94,7 @@ class PongGame extends SurfaceView implements Runnable{
         // Put the ball back to the starting position
         mBall.reset(mScreenX, mScreenY);
 
-        // Rest the score and the player's chances
-        mScore = 0;
-        mLives = 3;
+        profile = new Profile("Jimmy Le");
     }
 
     // When we start the thread with:
@@ -162,7 +156,7 @@ class PongGame extends SurfaceView implements Runnable{
             // Realistic-ish bounce
             mBall.batBounce(mBat.getRect());
             mBall.increaseVelocity();
-            mScore++;
+            profile.incrementScore();
             gameSound.collisionSounds("BAT");
         }
 
@@ -172,10 +166,10 @@ class PongGame extends SurfaceView implements Runnable{
         if(mBall.getRect().bottom > mScreenY){
             mBall.reverseYVelocity();
 
-            mLives--;
+            profile.decrementLives();
             gameSound.collisionSounds("BOTTOM");
 
-            if(mLives == 0){
+            if(profile.hasZeroLives()){
                 mPaused = true;
                 startNewGame();
             }
@@ -225,8 +219,8 @@ class PongGame extends SurfaceView implements Runnable{
             mPaint.setTextSize(mFontSize);
 
             // Draw the HUD
-            mCanvas.drawText("Score: " + mScore +
-                            "   Lives: " + mLives,
+            mCanvas.drawText("Score: " + profile.mScore +
+                            "   Lives: " + profile.mLives,
                     mFontMargin , mFontSize, mPaint);
 
 
@@ -234,7 +228,7 @@ class PongGame extends SurfaceView implements Runnable{
                then prints name to screen */
             userPaint = new Paint(mPaint);
             userPaint.setTextAlign(Paint.Align.RIGHT);
-            mCanvas.drawText("Name: " + userName,
+            mCanvas.drawText("Name: " + profile.userName,
                     mScreenX-50 , mFontSize, userPaint);
 
 
