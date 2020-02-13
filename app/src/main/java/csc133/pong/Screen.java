@@ -21,7 +21,6 @@ public class Screen {
         // Font is 5% (1/20th) of screen width, and Margin is 1.5% (1/75th) of screen width
         mFontSize = x / 20;
         mFontMargin = x / 75;
-
         mPaint = new Paint();
     }
 
@@ -64,6 +63,21 @@ public class Screen {
         this.mPaint.setTextSize(debugSize);
         this.mCanvas.drawText("FPS: " + this.mFPS ,
                 10, debugStart + debugSize, this.mPaint);
+    }
+
+    public void updateFPS(long frameStartTime) {
+        // How long did this frame/loop take?
+        // Store the answer in timeThisFrame
+        long timeThisFrame = System.currentTimeMillis() - frameStartTime;
+
+        // Make sure timeThisFrame is at least 1 millisecond
+        // because accidentally dividing by zero crashes the game
+        if (timeThisFrame > 0) {
+            // Store the current frame rate in mFPS
+            // ready to pass to the update methods of
+            // mBat and mBall next frame/loop
+            this.mFPS = this.MILLIS_IN_SECOND / timeThisFrame;
+        }
     }
 
 }

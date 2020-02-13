@@ -2,7 +2,6 @@ package csc133.pong;
 
 import android.graphics.Point;
 import android.content.Context;
-import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -44,7 +43,6 @@ class PongGame extends SurfaceView implements Runnable{
 
         // Initialize the objects ready for drawing with getHolder is a method of SurfaceView
         mOurHolder = getHolder();
-        screen.mPaint = new Paint();
 
         // Initialize the bat and ball
         mBall = new Ball(screen.x);
@@ -70,28 +68,11 @@ class PongGame extends SurfaceView implements Runnable{
             // Provided the game isn't paused call the update method
             if(!mPaused){
                 update();
-                // Now the bat and ball are in their new positions
-                // we can see if there have been any collisions
                 detectCollisions();
-
             }
-
-            // The movement has been handled and collisions
-            // detected now we can draw the scene.
+            
             draw();
-
-            // How long did this frame/loop take?
-            // Store the answer in timeThisFrame
-            long timeThisFrame = System.currentTimeMillis() - frameStartTime;
-
-            // Make sure timeThisFrame is at least 1 millisecond
-            // because accidentally dividing by zero crashes the game
-            if (timeThisFrame > 0) {
-                // Store the current frame rate in mFPS
-                // ready to pass to the update methods of
-                // mBat and mBall next frame/loop
-                screen.mFPS = screen.MILLIS_IN_SECOND / timeThisFrame;
-            }
+            screen.updateFPS(frameStartTime);
         }
     }
 
@@ -103,7 +84,7 @@ class PongGame extends SurfaceView implements Runnable{
 
     private void detectCollisions(){
         // Has the bat hit the ball?
-        if(RectF.intersects(mBat.getRect(), mBall.getRect())) {
+        if(batHitsBall()) {
             // Realistic-ish bounce
             mBall.batBounce(mBat.getRect());
             mBall.increaseVelocity();
@@ -111,8 +92,9 @@ class PongGame extends SurfaceView implements Runnable{
             gameSound.collisionSounds("BAT");
         }
         // Has the ball hit the edge of the screen
+
         // Bottom
-        if(mBall.getRect().bottom > screen.y) {
+        if(mBall.hitsBottom(screen)) {
             mBall.reverseYVelocity();
             profile.decrementLives();
             gameSound.collisionSounds("BOTTOM");
@@ -123,22 +105,26 @@ class PongGame extends SurfaceView implements Runnable{
             }
         }
         // Top
-        if(mBall.getRect().top < 0){
+        if(mBall.hitsTop()){
             mBall.reverseYVelocity();
             gameSound.collisionSounds("TOP");
 
         }
         // Left
-        if(mBall.getRect().left < 0){
+        if(mBall.hitsLeft()){
             mBall.reverseXVelocity();
             gameSound.collisionSounds("LEFT");
 
         }
         // Right
-        if(mBall.getRect().right > screen.x){
+        if(mBall.hitsRight(screen)){
             mBall.reverseXVelocity();
             gameSound.collisionSounds("RIGHT");
         }
+    }
+
+    private boolean batHitsBall() {
+        return RectF.intersects(this.mBat.getRect(), this.mBall.getRect());
     }
 
     // Draw the game objects and the HUD

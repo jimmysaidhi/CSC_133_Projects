@@ -115,11 +115,22 @@ class Ball {
             // Go left
             mXVelocity = -Math.abs(mXVelocity);
         }
-
-        // Having calculated left or right for
-        // horizontal direction simply reverse the
-        // vertical direction to go back up
-        // the screen
         reverseYVelocity();
+    }
+
+    public boolean hitsLeft() {
+        return this.getRect().left < 0;
+    }
+
+    public boolean hitsRight(Screen screen) {
+        return this.getRect().right > screen.x;
+    }
+
+    public boolean hitsTop() {
+        return this.getRect().top < 0;
+    }
+
+    public boolean hitsBottom(Screen screen) {
+        return this.getRect().bottom > screen.y;
     }
 }
