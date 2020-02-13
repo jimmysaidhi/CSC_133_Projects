@@ -2,8 +2,6 @@ package csc133.pong;
 
 import android.graphics.Point;
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.Log;
@@ -23,11 +21,11 @@ class PongGame extends SurfaceView implements Runnable{
     private Bat mBat;
     private Ball mBall;
 
-
     // SoundPool to control Sound
     private Sound gameSound;
     private Profile profile;
     private Screen screen;
+
     // Here is the Thread and two control variables
     private Thread mGameThread = null;
     // This volatile variable can be accessed
@@ -36,14 +34,7 @@ class PongGame extends SurfaceView implements Runnable{
     private boolean mPaused = true;
 
 
-    // The PongGame constructor
-    // Called when this line:
-    // mPongGame = new PongGame(this, size.x, size.y);
-    // is executed from PongActivity
     public PongGame(Context context, Point resolution) {
-        // Super... calls the parent class
-        // constructor of SurfaceView
-        // provided by Android
         super(context);
 
         // initializes sound based, connecting it to this context and starts the sound
@@ -51,10 +42,7 @@ class PongGame extends SurfaceView implements Runnable{
         this.profile = new Profile(USERNAME);
         this.screen = new Screen(resolution);
 
-
-        // Initialize the objects
-        // ready for drawing with
-        // getHolder is a method of SurfaceView
+        // Initialize the objects ready for drawing with getHolder is a method of SurfaceView
         mOurHolder = getHolder();
         screen.mPaint = new Paint();
 
@@ -156,37 +144,7 @@ class PongGame extends SurfaceView implements Runnable{
     // Draw the game objects and the HUD
     void draw() {
         if (mOurHolder.getSurface().isValid()) {
-            // Lock the canvas (graphics memory) ready to draw
-            screen.mCanvas = mOurHolder.lockCanvas();
-
-            // Fill the screen with a solid color
-            screen.mCanvas.drawColor(Color.argb
-                    (255, 26, 128, 182));
-
-            // Choose a color to paint with
-            screen.mPaint.setColor(Color.argb
-                    (255, 255, 255, 255));
-
-            // Draw the bat and ball
-            screen.mCanvas.drawRect(mBall.getRect(), screen.mPaint);
-            screen.mCanvas.drawRect(mBat.getRect(), screen.mPaint);
-
-            // Choose the font size
-            screen.mPaint.setTextSize(screen.mFontSize);
-
-            // Draw the HUD
-            screen.mCanvas.drawText("Score: " + profile.mScore +
-                            "   Lives: " + profile.mLives,
-                    screen.mFontMargin , screen.mFontSize, screen.mPaint);
-
-
-            /* Creates a copy of the paint object that's used to create text (to steal the properties)
-               then prints name to screen */
-            screen.userPaint = new Paint(screen.mPaint);
-            screen.userPaint.setTextAlign(Paint.Align.RIGHT);
-            screen.mCanvas.drawText("Name: " + profile.userName,
-                    screen.x-50 , screen.mFontSize, screen.userPaint);
-
+            screen.printDetails(this.profile, mOurHolder, this.mBat, this.mBall);
 
             if(DEBUGGING){
                 screen.printDebuggingText();
@@ -223,7 +181,6 @@ class PongGame extends SurfaceView implements Runnable{
                 break;
 
             case MotionEvent.ACTION_UP:
-
                 // Stop the bat moving
                 mBat.setMovementState(mBat.STOPPED);
                 break;
