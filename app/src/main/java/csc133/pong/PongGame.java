@@ -1,8 +1,10 @@
 package csc133.pong;
 
-import android.graphics.Color;
-import android.graphics.Point;
+
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.RectF;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -11,20 +13,39 @@ import android.view.SurfaceView;
 
 class PongGame extends SurfaceView implements Runnable{
 
-    private Display display;
-    private DebugText debugText;
-    private SurfaceHolder mOurHolder;
-    // SoundPool to control Sound
-    private Sound gameSound;
-    private User user;
+    // Are we debugging?
+    private final boolean DEBUGGING = true;
+    private String userName = "Jimmy Le";
 
+
+    // These objects are needed to do the drawing
+    private SurfaceHolder mOurHolder;
+    private Canvas mCanvas;
+    private Paint mPaint;
+    private Paint userPaint;
+    // How many frames per second did we get?
+    private long mFPS;
     // The number of milliseconds in a second
     private final int MILLIS_IN_SECOND = 1000;
-    protected ScreenText screenText;
+
+    // Holds the resolution of the screen
+    private int mScreenX;
+    private int mScreenY;
+    // How big will the text be?
+    private int mFontSize;
+    private int mFontMargin;
 
     // The game objects
     private Bat mBat;
     private Ball mBall;
+
+    // The current score and lives remaining
+    private int mScore = 0;
+    private int mLives = 3;
+
+
+    // SoundPool to control Sound
+    private Sound gameSound;
 
     // Here is the Thread and two control variables
     private Thread mGameThread = null;
@@ -34,36 +55,60 @@ class PongGame extends SurfaceView implements Runnable{
     private boolean mPaused = true;
 
 
-    public PongGame(Context context, Point screenCoordinates) {
+    // The PongGame constructor
+    // Called when this line:
+    // mPongGame = new PongGame(this, size.x, size.y);
+    // is executed from PongActivity
+    public PongGame(Context context, int x, int y) {
+        // Super... calls the parent class
+        // constructor of SurfaceView
+        // provided by Android
         super(context);
 
         // initializes sound based, connecting it to this context and starts the sound
         this.gameSound = new Sound(context);
-        this.display = new Display(screenCoordinates);
-        this.user = new User();
-        this.screenText = new ScreenText(this.display, this.user);
-        this.debugText = new DebugText(this);
 
-        // Initialize the objects ready for drawing with getHolder is a method of SurfaceView
+        // Initialize these two members/fields
+        // With the values passed in as parameters
+        mScreenX = x;
+        mScreenY = y;
+
+        // Font is 5% (1/20th) of screen width
+        mFontSize = mScreenX / 20;
+        // Margin is 1.5% (1/75th) of screen width
+        mFontMargin = mScreenX / 75;
+
+        // Initialize the objects
+        // ready for drawing with
+        // getHolder is a method of SurfaceView
         mOurHolder = getHolder();
+        mPaint = new Paint();
 
-        // Bat and Ball for the game
-        mBall = new Ball(this.display.mScreenX);
-        mBat = new Bat(this.display.mScreenX, this.display.mScreenY);
+        // Initialize the bat and ball
+        mBall = new Ball(mScreenX);
+        mBat = new Bat(mScreenX, mScreenY);
 
         // Everything is ready so start the game
         startNewGame();
     }
 
-   // New Game or Restarted after losing all lives
+    // The player has just lost
+    // or is starting their first game
     private void startNewGame(){
         // Put the ball back to the starting position
-        mBall.reset(this.display.mScreenX, this.display.mScreenY);
+        mBall.reset(mScreenX, mScreenY);
 
         // Rest the score and the player's chances
-        this.user = new User();
+        mScore = 0;
+        mLives = 3;
     }
 
+    // When we start the thread with:
+    // mGameThread.start();
+    // the run method is continuously called by Android
+    // because we implemented the Runnable interface
+    // Calling mGameThread.join();
+    // will stop the thread
     @Override
     public void run() {
         // mPlaying gives us finer control
@@ -81,6 +126,7 @@ class PongGame extends SurfaceView implements Runnable{
                 // Now the bat and ball are in their new positions
                 // we can see if there have been any collisions
                 detectCollisions();
+
             }
 
             // The movement has been handled and collisions
@@ -97,37 +143,39 @@ class PongGame extends SurfaceView implements Runnable{
                 // Store the current frame rate in mFPS
                 // ready to pass to the update methods of
                 // mBat and mBall next frame/loop
-                debugText.setmFPS(MILLIS_IN_SECOND / timeThisFrame);
+                mFPS = MILLIS_IN_SECOND / timeThisFrame;
             }
 
         }
+
     }
 
     private void update() {
         // Update the bat and the ball
-        mBall.update(debugText.getmFPS());
-        mBat.update(debugText.getmFPS());
+        mBall.update(mFPS);
+        mBat.update(mFPS);
     }
 
-    // Complete
     private void detectCollisions(){
         // Has the bat hit the ball?
         if(RectF.intersects(mBat.getRect(), mBall.getRect())) {
             // Realistic-ish bounce
             mBall.batBounce(mBat.getRect());
             mBall.increaseVelocity();
-            user.incrementScore();
+            mScore++;
             gameSound.collisionSounds("BAT");
         }
 
+        // Has the ball hit the edge of the screen
+
         // Bottom
-        if(mBall.getRect().bottom > this.display.mScreenY){
+        if(mBall.getRect().bottom > mScreenY){
             mBall.reverseYVelocity();
 
-            user.decrementLives();
+            mLives--;
             gameSound.collisionSounds("BOTTOM");
 
-            if(user.hasZeroLives()){
+            if(mLives == 0){
                 mPaused = true;
                 startNewGame();
             }
@@ -144,40 +192,58 @@ class PongGame extends SurfaceView implements Runnable{
         if(mBall.getRect().left < 0){
             mBall.reverseXVelocity();
             gameSound.collisionSounds("LEFT");
+
         }
 
         // Right
-        if(mBall.getRect().right > this.display.mScreenX){
+        if(mBall.getRect().right > mScreenX){
             mBall.reverseXVelocity();
             gameSound.collisionSounds("RIGHT");
         }
+
     }
 
     // Draw the game objects and the HUD
     void draw() {
         if (mOurHolder.getSurface().isValid()) {
-        /*    // Lock the canvas (graphics memory) ready to draw
-            this.screenText.mCanvas = mOurHolder.lockCanvas();
+            // Lock the canvas (graphics memory) ready to draw
+            mCanvas = mOurHolder.lockCanvas();
 
             // Fill the screen with a solid color
-            this.screenText.mCanvas.drawColor(Color.argb
+            mCanvas.drawColor(Color.argb
                     (255, 26, 128, 182));
 
             // Choose a color to paint with
-            this.screenText.mPaint.setColor(Color.argb
-                    (255, 255, 255, 255));*/
-
-            screenText.printScreen(mOurHolder);
+            mPaint.setColor(Color.argb
+                    (255, 255, 255, 255));
 
             // Draw the bat and ball
-            this.screenText.mCanvas.drawRect(mBall.getRect(), this.screenText.mPaint);
-            this.screenText.mCanvas.drawRect(mBat.getRect(), this.screenText.mPaint);
+            mCanvas.drawRect(mBall.getRect(), mPaint);
+            mCanvas.drawRect(mBat.getRect(), mPaint);
 
-            debugText.printDebuggingText();
+            // Choose the font size
+            mPaint.setTextSize(mFontSize);
 
+            // Draw the HUD
+            mCanvas.drawText("Score: " + mScore +
+                            "   Lives: " + mLives,
+                    mFontMargin , mFontSize, mPaint);
+
+
+            /* Creates a copy of the paint object that's used to create text (to steal the properties)
+               then prints name to screen */
+            userPaint = new Paint(mPaint);
+            userPaint.setTextAlign(Paint.Align.RIGHT);
+            mCanvas.drawText("Name: " + userName,
+                    mScreenX-50 , mFontSize, userPaint);
+
+
+            if(DEBUGGING){
+                printDebuggingText();
+            }
             // Display the drawing on screen
             // unlockCanvasAndPost is a method of SurfaceView
-            mOurHolder.unlockCanvasAndPost(this.screenText.mCanvas);
+            mOurHolder.unlockCanvasAndPost(mCanvas);
         }
 
     }
@@ -185,6 +251,9 @@ class PongGame extends SurfaceView implements Runnable{
     // Handle all the screen touches
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent) {
+
+        // This switch block replaces the
+        // if statement from the Sub Hunter game
         switch (motionEvent.getAction() &
                 MotionEvent.ACTION_MASK) {
 
@@ -195,7 +264,7 @@ class PongGame extends SurfaceView implements Runnable{
                 mPaused = false;
 
                 // Where did the touch happen
-                if(motionEvent.getX() > this.display.mScreenX / 2){
+                if(motionEvent.getX() > mScreenX / 2){
                     // On the right hand side
                     mBat.setMovementState(mBat.RIGHT);
                 }
@@ -206,6 +275,12 @@ class PongGame extends SurfaceView implements Runnable{
 
                 break;
 
+            // The player lifted their finger
+            // from anywhere on screen.
+            // It is possible to create bugs by using
+            // multiple fingers. We will use more
+            // complicated and robust touch handling
+            // in later projects
             case MotionEvent.ACTION_UP:
 
                 // Stop the bat moving
@@ -215,10 +290,17 @@ class PongGame extends SurfaceView implements Runnable{
         return true;
     }
 
+    private void printDebuggingText(){
+        int debugSize = mFontSize / 2;
+        int debugStart = 150;
+        mPaint.setTextSize(debugSize);
+        mCanvas.drawText("FPS: " + mFPS ,
+                10, debugStart + debugSize, mPaint);
 
+    }
 
-// Do not touch
-    // This method is called by PongActivity when player quits game
+    // This method is called by PongActivity
+    // when the player quits the game
     public void pause() {
 
         // Set mPlaying to false
@@ -234,7 +316,9 @@ class PongGame extends SurfaceView implements Runnable{
 
     }
 
-    // This method is called by PongActivity when the player starts the game
+
+    // This method is called by PongActivity
+    // when the player starts the game
     public void resume() {
         mPlaying = true;
         // Initialize the instance of Thread
