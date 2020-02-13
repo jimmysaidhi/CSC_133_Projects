@@ -15,10 +15,10 @@ public class PongActivity extends Activity {
         Display display = getWindowManager().getDefaultDisplay();
 
         // Gets properties of the device and then initializes the pong game
-        Point size = new Point();
-        display.getSize(size);
+        Point screen = new Point();
+        display.getSize(screen);
 
-        mPongGame = new PongGame(this, size.x, size.y);
+        mPongGame = new PongGame(this, screen);
         setContentView(mPongGame);
     }
 
