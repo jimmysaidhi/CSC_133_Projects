@@ -18,18 +18,6 @@ class PongGame extends SurfaceView implements Runnable{
     private static String USERNAME = "Jimmy Le";
     // These objects are needed to do the drawing
     private SurfaceHolder mOurHolder;
-    private Canvas mCanvas;
-    private Paint mPaint;
-    private Paint userPaint;
-    // How many frames per second did we get?
-    private long mFPS;
-    // The number of milliseconds in a second
-    private final int MILLIS_IN_SECOND = 1000;
-
-
-    // How big will the text be?
-    private int mFontSize;
-    private int mFontMargin;
 
     // The game objects
     private Bat mBat;
@@ -63,16 +51,12 @@ class PongGame extends SurfaceView implements Runnable{
         this.profile = new Profile(USERNAME);
         this.screen = new Screen(resolution);
 
-        // Font is 5% (1/20th) of screen width
-        mFontSize = screen.x / 20;
-        // Margin is 1.5% (1/75th) of screen width
-        mFontMargin = screen.x / 75;
 
         // Initialize the objects
         // ready for drawing with
         // getHolder is a method of SurfaceView
         mOurHolder = getHolder();
-        mPaint = new Paint();
+        screen.mPaint = new Paint();
 
         // Initialize the bat and ball
         mBall = new Ball(screen.x);
@@ -82,8 +66,7 @@ class PongGame extends SurfaceView implements Runnable{
         startNewGame();
     }
 
-    // The player has just lost
-    // or is starting their first game
+    // The player has just lost or is starting their first game
     private void startNewGame(){
         // Put the ball back to the starting position
         mBall.reset(screen);
@@ -119,15 +102,15 @@ class PongGame extends SurfaceView implements Runnable{
                 // Store the current frame rate in mFPS
                 // ready to pass to the update methods of
                 // mBat and mBall next frame/loop
-                mFPS = MILLIS_IN_SECOND / timeThisFrame;
+                screen.mFPS = screen.MILLIS_IN_SECOND / timeThisFrame;
             }
         }
     }
 
     private void update() {
         // Update the bat and the ball
-        mBall.update(mFPS);
-        mBat.update(mFPS);
+        mBall.update(screen.mFPS);
+        mBat.update(screen.mFPS);
     }
 
     private void detectCollisions(){
@@ -143,7 +126,6 @@ class PongGame extends SurfaceView implements Runnable{
         // Bottom
         if(mBall.getRect().bottom > screen.y) {
             mBall.reverseYVelocity();
-
             profile.decrementLives();
             gameSound.collisionSounds("BOTTOM");
 
@@ -175,43 +157,43 @@ class PongGame extends SurfaceView implements Runnable{
     void draw() {
         if (mOurHolder.getSurface().isValid()) {
             // Lock the canvas (graphics memory) ready to draw
-            mCanvas = mOurHolder.lockCanvas();
+            screen.mCanvas = mOurHolder.lockCanvas();
 
             // Fill the screen with a solid color
-            mCanvas.drawColor(Color.argb
+            screen.mCanvas.drawColor(Color.argb
                     (255, 26, 128, 182));
 
             // Choose a color to paint with
-            mPaint.setColor(Color.argb
+            screen.mPaint.setColor(Color.argb
                     (255, 255, 255, 255));
 
             // Draw the bat and ball
-            mCanvas.drawRect(mBall.getRect(), mPaint);
-            mCanvas.drawRect(mBat.getRect(), mPaint);
+            screen.mCanvas.drawRect(mBall.getRect(), screen.mPaint);
+            screen.mCanvas.drawRect(mBat.getRect(), screen.mPaint);
 
             // Choose the font size
-            mPaint.setTextSize(mFontSize);
+            screen.mPaint.setTextSize(screen.mFontSize);
 
             // Draw the HUD
-            mCanvas.drawText("Score: " + profile.mScore +
+            screen.mCanvas.drawText("Score: " + profile.mScore +
                             "   Lives: " + profile.mLives,
-                    mFontMargin , mFontSize, mPaint);
+                    screen.mFontMargin , screen.mFontSize, screen.mPaint);
 
 
             /* Creates a copy of the paint object that's used to create text (to steal the properties)
                then prints name to screen */
-            userPaint = new Paint(mPaint);
-            userPaint.setTextAlign(Paint.Align.RIGHT);
-            mCanvas.drawText("Name: " + profile.userName,
-                    screen.x-50 , mFontSize, userPaint);
+            screen.userPaint = new Paint(screen.mPaint);
+            screen.userPaint.setTextAlign(Paint.Align.RIGHT);
+            screen.mCanvas.drawText("Name: " + profile.userName,
+                    screen.x-50 , screen.mFontSize, screen.userPaint);
 
 
             if(DEBUGGING){
-                printDebuggingText();
+                screen.printDebuggingText();
             }
             // Display the drawing on screen
             // unlockCanvasAndPost is a method of SurfaceView
-            mOurHolder.unlockCanvasAndPost(mCanvas);
+            mOurHolder.unlockCanvasAndPost(screen.mCanvas);
         }
     }
 
@@ -249,13 +231,6 @@ class PongGame extends SurfaceView implements Runnable{
         return true;
     }
 
-    private void printDebuggingText(){
-        int debugSize = mFontSize / 2;
-        int debugStart = 150;
-        mPaint.setTextSize(debugSize);
-        mCanvas.drawText("FPS: " + mFPS ,
-                10, debugStart + debugSize, mPaint);
-    }
 
     public void pause() {
         mPlaying = false;
