@@ -3,31 +3,18 @@ import android.graphics.RectF;
 
 class Ball {
 
-    // These are the member variables (fields)
-    // They all have the m prefix
-    // They are all private
-    // because direct access is not required
     private RectF mRect;
     private float mXVelocity;
     private float mYVelocity;
     private float mBallWidth;
     private float mBallHeight;
 
-    // It is called when by the code:
-    //  mBall = new Ball(mScreenX);
-    // In the PongGame class
+
     Ball(int screenX){
 
-        // Make the ball square and 1% of screen width
-        // of the screen width
         mBallWidth = screenX / 100;
         mBallHeight = screenX / 100;
 
-        // Initialize the RectF with 0, 0, 0, 0
-        // We do it here because we only want to
-        // do it once.
-        // WE will initialize the detail
-        // at the start of each game
         mRect = new RectF();
     }
 
@@ -118,19 +105,19 @@ class Ball {
         reverseYVelocity();
     }
 
-    public boolean hitsLeft() {
-        return this.getRect().left < 0;
+    public boolean hitsBottom(Screen screen) {
+        return this.getRect().bottom > screen.y;
     }
 
     public boolean hitsRight(Screen screen) {
         return this.getRect().right > screen.x;
     }
 
-    public boolean hitsTop() {
-        return this.getRect().top < 0;
+    public boolean hitsLeft() {
+        return this.getRect().left < 0;
     }
 
-    public boolean hitsBottom(Screen screen) {
-        return this.getRect().bottom > screen.y;
+    public boolean hitsTop() {
+        return this.getRect().top < 0;
     }
 }

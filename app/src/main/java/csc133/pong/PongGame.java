@@ -70,7 +70,7 @@ class PongGame extends SurfaceView implements Runnable{
                 update();
                 detectCollisions();
             }
-            
+
             draw();
             screen.updateFPS(frameStartTime);
         }
