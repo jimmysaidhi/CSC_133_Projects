@@ -1,6 +1,6 @@
 package csc133.pong;
 
-
+import android.graphics.Point;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -15,7 +15,7 @@ class PongGame extends SurfaceView implements Runnable{
 
     // Are we debugging?
     private final boolean DEBUGGING = true;
-
+    private static String USERNAME = "Jimmy Le";
     // These objects are needed to do the drawing
     private SurfaceHolder mOurHolder;
     private Canvas mCanvas;
@@ -26,9 +26,7 @@ class PongGame extends SurfaceView implements Runnable{
     // The number of milliseconds in a second
     private final int MILLIS_IN_SECOND = 1000;
 
-    // Holds the resolution of the screen
-    private int mScreenX;
-    private int mScreenY;
+
     // How big will the text be?
     private int mFontSize;
     private int mFontMargin;
@@ -41,7 +39,7 @@ class PongGame extends SurfaceView implements Runnable{
     // SoundPool to control Sound
     private Sound gameSound;
     private Profile profile;
-
+    private Screen screen;
     // Here is the Thread and two control variables
     private Thread mGameThread = null;
     // This volatile variable can be accessed
@@ -54,7 +52,7 @@ class PongGame extends SurfaceView implements Runnable{
     // Called when this line:
     // mPongGame = new PongGame(this, size.x, size.y);
     // is executed from PongActivity
-    public PongGame(Context context, int x, int y) {
+    public PongGame(Context context, Point resolution) {
         // Super... calls the parent class
         // constructor of SurfaceView
         // provided by Android
@@ -62,17 +60,13 @@ class PongGame extends SurfaceView implements Runnable{
 
         // initializes sound based, connecting it to this context and starts the sound
         this.gameSound = new Sound(context);
-        this.profile = new Profile("Jimmy Le");
-
-        // Initialize these two members/fields
-        // With the values passed in as parameters
-        mScreenX = x;
-        mScreenY = y;
+        this.profile = new Profile(USERNAME);
+        this.screen = new Screen(resolution);
 
         // Font is 5% (1/20th) of screen width
-        mFontSize = mScreenX / 20;
+        mFontSize = screen.x / 20;
         // Margin is 1.5% (1/75th) of screen width
-        mFontMargin = mScreenX / 75;
+        mFontMargin = screen.x / 75;
 
         // Initialize the objects
         // ready for drawing with
@@ -81,8 +75,8 @@ class PongGame extends SurfaceView implements Runnable{
         mPaint = new Paint();
 
         // Initialize the bat and ball
-        mBall = new Ball(mScreenX);
-        mBat = new Bat(mScreenX, mScreenY);
+        mBall = new Ball(screen.x);
+        mBat = new Bat(screen.x, screen.y);
 
         // Everything is ready so start the game
         startNewGame();
@@ -92,25 +86,13 @@ class PongGame extends SurfaceView implements Runnable{
     // or is starting their first game
     private void startNewGame(){
         // Put the ball back to the starting position
-        mBall.reset(mScreenX, mScreenY);
-
-        profile = new Profile("Jimmy Le");
+        mBall.reset(screen);
+        profile = new Profile(USERNAME);
     }
 
-    // When we start the thread with:
-    // mGameThread.start();
-    // the run method is continuously called by Android
-    // because we implemented the Runnable interface
-    // Calling mGameThread.join();
-    // will stop the thread
     @Override
     public void run() {
-        // mPlaying gives us finer control
-        // rather than just relying on the calls to run
-        // mPlaying must be true AND
-        // the thread running for the main loop to execute
         while (mPlaying) {
-
             // What time is it now at the start of the loop?
             long frameStartTime = System.currentTimeMillis();
 
@@ -139,9 +121,7 @@ class PongGame extends SurfaceView implements Runnable{
                 // mBat and mBall next frame/loop
                 mFPS = MILLIS_IN_SECOND / timeThisFrame;
             }
-
         }
-
     }
 
     private void update() {
@@ -159,11 +139,9 @@ class PongGame extends SurfaceView implements Runnable{
             profile.incrementScore();
             gameSound.collisionSounds("BAT");
         }
-
         // Has the ball hit the edge of the screen
-
         // Bottom
-        if(mBall.getRect().bottom > mScreenY){
+        if(mBall.getRect().bottom > screen.y) {
             mBall.reverseYVelocity();
 
             profile.decrementLives();
@@ -174,27 +152,23 @@ class PongGame extends SurfaceView implements Runnable{
                 startNewGame();
             }
         }
-
         // Top
         if(mBall.getRect().top < 0){
             mBall.reverseYVelocity();
             gameSound.collisionSounds("TOP");
 
         }
-
         // Left
         if(mBall.getRect().left < 0){
             mBall.reverseXVelocity();
             gameSound.collisionSounds("LEFT");
 
         }
-
         // Right
-        if(mBall.getRect().right > mScreenX){
+        if(mBall.getRect().right > screen.x){
             mBall.reverseXVelocity();
             gameSound.collisionSounds("RIGHT");
         }
-
     }
 
     // Draw the game objects and the HUD
@@ -229,7 +203,7 @@ class PongGame extends SurfaceView implements Runnable{
             userPaint = new Paint(mPaint);
             userPaint.setTextAlign(Paint.Align.RIGHT);
             mCanvas.drawText("Name: " + profile.userName,
-                    mScreenX-50 , mFontSize, userPaint);
+                    screen.x-50 , mFontSize, userPaint);
 
 
             if(DEBUGGING){
@@ -239,13 +213,11 @@ class PongGame extends SurfaceView implements Runnable{
             // unlockCanvasAndPost is a method of SurfaceView
             mOurHolder.unlockCanvasAndPost(mCanvas);
         }
-
     }
 
     // Handle all the screen touches
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent) {
-
         // This switch block replaces the
         // if statement from the Sub Hunter game
         switch (motionEvent.getAction() &
@@ -258,7 +230,7 @@ class PongGame extends SurfaceView implements Runnable{
                 mPaused = false;
 
                 // Where did the touch happen
-                if(motionEvent.getX() > mScreenX / 2){
+                if(motionEvent.getX() > screen.x / 2){
                     // On the right hand side
                     mBat.setMovementState(mBat.RIGHT);
                 }
@@ -266,15 +238,8 @@ class PongGame extends SurfaceView implements Runnable{
                     // On the left hand side
                     mBat.setMovementState(mBat.LEFT);
                 }
-
                 break;
 
-            // The player lifted their finger
-            // from anywhere on screen.
-            // It is possible to create bugs by using
-            // multiple fingers. We will use more
-            // complicated and robust touch handling
-            // in later projects
             case MotionEvent.ACTION_UP:
 
                 // Stop the bat moving
@@ -290,16 +255,9 @@ class PongGame extends SurfaceView implements Runnable{
         mPaint.setTextSize(debugSize);
         mCanvas.drawText("FPS: " + mFPS ,
                 10, debugStart + debugSize, mPaint);
-
     }
 
-    // This method is called by PongActivity
-    // when the player quits the game
     public void pause() {
-
-        // Set mPlaying to false
-        // Stopping the thread isn't
-        // always instant
         mPlaying = false;
         try {
             // Stop the thread
@@ -310,9 +268,6 @@ class PongGame extends SurfaceView implements Runnable{
 
     }
 
-
-    // This method is called by PongActivity
-    // when the player starts the game
     public void resume() {
         mPlaying = true;
         // Initialize the instance of Thread

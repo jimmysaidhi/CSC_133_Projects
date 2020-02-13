@@ -65,21 +65,21 @@ class Ball {
         mXVelocity = -mXVelocity;
     }
 
-    void reset(int x, int y){
+    void reset(Screen screen){
 
         // Initialise the four points of
         // the rectangle which defines the ball
-        mRect.left = x / 2;
+        mRect.left = screen.x / 2;
         mRect.top = 0;
-        mRect.right = x / 2 + mBallWidth;
+        mRect.right = screen.x / 2 + mBallWidth;
         mRect.bottom = mBallHeight;
 
         // How fast will the ball travel
         // You could vary this to suit
         // You could even increase it as the game progresses
         // to make it harder
-        mYVelocity = -(y / 3);
-        mXVelocity = (y / 3);
+        mYVelocity = -(screen.y / 3);
+        mXVelocity = (screen.y / 3);
     }
 
     void increaseVelocity(){
